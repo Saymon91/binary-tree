@@ -1,4 +1,10 @@
 var NULL = [undefined, null];
+var MAX_CHILD = 2;
+var MIN_CHILD = 1;
+var VALUE = 0;
+var NOT_FOUND = -1;
+
+var EMPTY_PATH = [];
 
 module.exports = class BynaryTree {
   constructor(options) {
@@ -12,7 +18,7 @@ module.exports = class BynaryTree {
       this.condition = options.condition;
     }
 
-    if (NULL.indexOf(data) >= 0 && !Array.isArray(data)) {
+    if (NULL.indexOf(data) === -1 && !Array.isArray(data)) {
       data = [data];
     }
 
@@ -27,20 +33,26 @@ module.exports = class BynaryTree {
 
   condition(parent, node) {
     if (!parent || !node) {
-      return -1;
-    } else if (parent[1] === node[1]) {
-      return 1;
-    } else if (parent[1] > node[1]) {
-      return 0;
-    } else {
-      return 2;
+      return NOT_FOUND;
     }
+    if (parent[VALUE] === node[VALUE]) {
+      return VALUE;
+    }
+    if (parent[VALUE] > node[VALUE]) {
+      return MIN_CHILD;
+    }
+    return MAX_CHILD;
   }
 
   add(value) {
-    return NULL.indexOf(value) > -1
-      ? this
-      : this.insert([null, value, null]);
+    if (NULL.indexOf(value) > -1) {
+      return EMPTY_PATH;
+    }
+
+    var node = [null, null, null];
+    node[VALUE] = value;
+
+    return this.insert([value, null, null]);
   }
 
   insert(node) {
@@ -52,18 +64,21 @@ module.exports = class BynaryTree {
     var depth = 0;
     do {
       parent = parent[index];
-      path.push(index);
-      if (parent[1] === null) {
-        parent[1] = node[1];
-        added = true;
-        next = false;
+      if (parent[VALUE] === null || parent[VALUE] === node[VALUE]) {
+        parent[VALUE] = node[VALUE];
       } else {
         index = this.condition(parent, node);
-        next = index !== 1 && index !== -1;
+        next = index !== NOT_FOUND;
 
-        if (!next) {
-          parent[index] = [null, null, null];
+        if (next && !parent[index]) {
+          parent[index] = node;
         }
+      }
+
+      if (parent[VALUE] === node[VALUE]) {
+        added = true;
+        next = false;
+        path.push(index);
       }
     } while (next);
 
@@ -76,7 +91,7 @@ module.exports = class BynaryTree {
       this.minDepth = depth;
     }
 
-    return added ? path : [];
+    return added ? path : EMPTY_PATH;
   }
 
   find(value) {
@@ -92,17 +107,17 @@ module.exports = class BynaryTree {
     do {
       path.push(index);
       step = step[index];
-      result = step ? step[1] : null;
+      result = step ? step[VALUE] : null;
       if (result !== null) {
-        index = value > result ? 2 : 0;
+        index = value > result ? MAX_CHILD : MIN_CHILD;
       }
     } while (result !== value && result !== null);
 
-    return result === value ? path : [];
+    return result === value ? path : EMPTY_PATH;
   }
 
   get(path) {
-    if (NULL.indexOf(path) > -1) {
+    if (NULL.indexOf(path) > NOT_FOUND) {
       return undefined;
     }
 
@@ -117,18 +132,18 @@ module.exports = class BynaryTree {
 
     do {
       step = step[path[index++]];
-      result = step ? step[1] : null;
+      result = step ? step[VALUE] : null;
     } while (pathLength > index && result !== null);
 
     return result === null ? undefined : result;
   }
 
   max(node) {
-    return this.extremum(2, node || this.tree[0]);
+    return this.extremum(MAX_CHILD, node || this.tree[0]);
   }
 
   min(node) {
-    return this.extremum(0, node || this.tree[0]);
+    return this.extremum(MIN_CHILD, node || this.tree[0]);
   }
 
   extremum(index, step) {
@@ -138,7 +153,7 @@ module.exports = class BynaryTree {
       step = step[index];
     }
 
-    return step[1];
+    return step[VALUE];
   }
 
   delete(path) {
@@ -149,11 +164,31 @@ module.exports = class BynaryTree {
       return false;
     }
 
-    var parentDeletingNode;
+    var parentDeletingNode = this.tree;
     var deletingNode = this.tree;
-    for (var index = 0, length = path.length; index < length; index++) {
+    for (var index = 0, length = path.length, parentIndex = length -1; index < length; index++) {
       deletingNode = deletingNode[path[index]];
+      if (index < parentIndex) {
+        parentDeletingNode = parentDeletingNode[path[index]];
+      }
     }
+
+    if (!deletingNode[MAX_CHILD] && !deletingNode[MIN_CHILD]) {
+      parentDeletingNode[deletingNode[VALUE] > parentDeletingNode[VALUE] ? MAX_CHILD : MIN_CHILD] = null;
+      return true;
+    }
+
+    if (!deletingNode[MAX_CHILD] && deletingNode[MIN_CHILD]) {
+      parentDeletingNode[deletingNode[VALUE] > parentDeletingNode[VALUE] ? MAX_CHILD : MIN_CHILD] = deletingNode[MIN_CHILD];
+      return true;
+    }
+
+
+    var maxChild = this.max(deletingNode);
+    this.delete(maxChild);
+    deletingNode[VALUE] = maxChild;
+
+    return true;
   }
 };
 
