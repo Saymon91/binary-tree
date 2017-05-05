@@ -113,12 +113,31 @@ console.log('DELETE3:', compare(
     return testTree.delete(102);
   }));
 
+console.log('DELETE4:', compare(
+  function () {
+    return del(testArr, 18);
+  },
+  function () {
+    return testTree.delete(18);
+  }));
+console.log('DELETE5:', compare(
+  function () {
+    return del(testArr, 10);
+  },
+  function () {
+    return testTree.delete(10);
+  }));
+
 testTree.add(100);
 testArr.push(100);
 testTree.add(101);
 testArr.push(101);
 testTree.add(102);
 testArr.push(102);
+testTree.add(10);
+testArr.push(10);
+testTree.add(18);
+testArr.push(18);
 
 console.log('DELETE_1:', compare(
   function () {
@@ -142,4 +161,20 @@ console.log('DELETE_3:', compare(
   },
   function () {
     return testTree.delete(102);
+  }));
+
+console.log('DELETE_4:', compare(
+  function () {
+    return delWhile(testArr, 10);
+  },
+  function () {
+    return testTree.delete(10);
+  }));
+
+console.log('DELETE_5:', compare(
+  function () {
+    return delWhile(testArr, 18);
+  },
+  function () {
+    return testTree.delete(18);
   }));
